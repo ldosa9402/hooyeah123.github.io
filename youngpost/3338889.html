@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF 線上檢視器</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // 設定 PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <style>
+        body { background-color: #525659; }
+        #pdf-render { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+    </style>
+</head>
+<body class="h-screen flex flex-col text-gray-100 overflow-hidden">
+
+    <!-- 頂部導航與工具列 -->
+    <header class="bg-gray-900 shadow-md z-10">
+        <!-- 標題列 -->
+        <div class="border-b border-gray-700 px-4 py-2 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-red-500">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                </svg>
+                <h1 class="text-sm font-semibold tracking-wide">PDF 閱讀器</h1>
+            </div>
+            <div class="text-xs text-gray-400 truncate max-w-[200px]" id="file-name">載入中...</div>
+        </div>
+
+        <!-- 工具列 -->
+        <div class="px-4 py-2 flex justify-between items-center bg-gray-800 text-sm">
+            <!-- 翻頁控制 -->
+            <div class="flex items-center gap-3">
+                <button id="prev-page" class="hover:bg-gray-700 p-1 rounded disabled:opacity-50 disabled:cursor-not-allowed transition" title="上一頁">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                    </svg>
+                </button>
+                <span class="font-mono">
+                    <span id="page-num">0</span> / <span id="page-count">0</span>
+                </span>
+                <button id="next-page" class="hover:bg-gray-700 p-1 rounded disabled:opacity-50 disabled:cursor-not-allowed transition" title="下一頁">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- 縮放控制 -->
+            <div class="flex items-center gap-3">
+                <button id="zoom-out" class="hover:bg-gray-700 p-1 rounded transition" title="縮小">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12h-15" />
+                    </svg>
+                </button>
+                <span id="zoom-level" class="w-12 text-center">100%</span>
+                <button id="zoom-in" class="hover:bg-gray-700 p-1 rounded transition" title="放大">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- PDF 顯示區域 (可捲動) -->
+    <main id="main-container" class="flex-grow overflow-auto flex justify-center p-8 relative">
+        <canvas id="pdf-render" class="block bg-white"></canvas>
+        
+        <!-- 錯誤訊息 -->
+        <div id="error-message" class="hidden absolute top-10 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded max-w-md" role="alert">
+            <strong class="font-bold">發生錯誤!</strong>
+            <span class="block sm:inline" id="error-text">無法載入 PDF。</span>
+        </div>
+    </main>
+
+    <script>
+        // ==========================================
+        //  請在下方引號中輸入您的 PDF 連結
+        //  注意：由於瀏覽器安全限制 (CORS)，如果連結是跨域的，
+        //  目標伺服器必須允許跨域存取。
+        // ==========================================
+        const url = 'https://ldosa9402.github.io/hooyeah123.github.io/youngpost/3338889.pdf';
+        // ==========================================
+
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        let scale = 1.2; // 預設縮放比例
+        const canvas = document.getElementById('pdf-render');
+        const ctx = canvas.getContext('2d');
+
+        const pageNumSpan = document.getElementById('page-num');
+        const pageCountSpan = document.getElementById('page-count');
+        const zoomLevelSpan = document.getElementById('zoom-level');
+        const fileNameDiv = document.getElementById('file-name');
+        const errorDiv = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+
+        // 顯示檔案名稱
+        fileNameDiv.textContent = url.split('/').pop() || 'document.pdf';
+
+        /**
+         * 渲染指定頁面
+         */
+        function renderPage(num) {
+            pageRendering = true;
+            
+            // 獲取頁面
+            pdfDoc.getPage(num).then(function(page) {
+                const viewport = page.getViewport({scale: scale});
+                
+                // 設定 Canvas 大小
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                // 渲染 Context
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                
+                const renderTask = page.render(renderContext);
+
+                // 等待渲染完成
+                renderTask.promise.then(function() {
+                    pageRendering = false;
+                    
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+            }).catch(err => {
+                showError("渲染頁面時發生錯誤: " + err.message);
+                pageRendering = false;
+            });
+
+            // 更新頁碼顯示
+            pageNumSpan.textContent = num;
+            zoomLevelSpan.textContent = Math.round(scale * 100) + '%';
+            
+            // 更新按鈕狀態
+            document.getElementById('prev-page').disabled = num <= 1;
+            document.getElementById('next-page').disabled = num >= pdfDoc.numPages;
+        }
+
+        /**
+         * 如果正在渲染中，將頁面排入佇列
+         */
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        /**
+         * 上一頁
+         */
+        function onPrevPage() {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+
+        /**
+         * 下一頁
+         */
+        function onNextPage() {
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+
+        /**
+         * 放大
+         */
+        function onZoomIn() {
+            scale += 0.2;
+            queueRenderPage(pageNum);
+        }
+
+        /**
+         * 縮小
+         */
+        function onZoomOut() {
+            if (scale <= 0.4) return;
+            scale -= 0.2;
+            queueRenderPage(pageNum);
+        }
+
+        function showError(msg) {
+            errorDiv.classList.remove('hidden');
+            errorText.textContent = msg;
+            console.error(msg);
+        }
+
+        // 綁定按鈕事件
+        document.getElementById('prev-page').addEventListener('click', onPrevPage);
+        document.getElementById('next-page').addEventListener('click', onNextPage);
+        document.getElementById('zoom-in').addEventListener('click', onZoomIn);
+        document.getElementById('zoom-out').addEventListener('click', onZoomOut);
+
+        // 初始化 PDF
+        (async function initPdf() {
+            try {
+                const loadingTask = pdfjsLib.getDocument(url);
+                pdfDoc = await loadingTask.promise;
+                
+                pageCountSpan.textContent = pdfDoc.numPages;
+                
+                // 渲染第一頁
+                renderPage(pageNum);
+            } catch (err) {
+                let msg = err.message;
+                if (err.name === 'MissingPDFException') {
+                    msg = "找不到 PDF 檔案，請檢查連結是否正確。";
+                } else if (msg.includes('CORS')) { // 簡化判斷
+                    msg = "無法存取跨域 PDF，請確保伺服器允許 CORS 或使用同源連結。";
+                }
+                showError("載入 PDF 失敗: " + msg);
+            }
+        })();
+    </script>
+</body>
+</html>
