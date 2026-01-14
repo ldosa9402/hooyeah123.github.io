@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leyla's Smart Vocabulary</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #1a73e8;
+            --primary-hover: #1557b0;
+            --text-main: #202124;
+            --text-secondary: #5f6368;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --border-color: #dadce0;
+        }
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Header & Search */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-top: 20px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: var(--text-main);
+            font-weight: 400;
+            margin-bottom: 20px;
+        }
+
+        h1 span {
+            color: var(--primary-blue);
+            font-weight: 700;
+        }
+
+        .search-container {
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 14px 24px 14px 50px;
+            font-size: 16px;
+            border: 1px solid transparent;
+            border-radius: 24px;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(60,64,67,0.1), 0 1px 2px rgba(60,64,67,0.06);
+            outline: none;
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+
+        .search-box:focus {
+            box-shadow: 0 4px 12px rgba(60,64,67,0.15);
+            border-color: transparent;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            fill: #9aa0a6;
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Grid Layout */
+        .vocab-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+            padding-bottom: 40px;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: box-shadow 0.2s, border-color 0.2s;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 8px rgba(60,64,67,0.1);
+            border-color: #d2e3fc;
+        }
+
+        .card.active {
+            border: 1px solid var(--primary-blue);
+            box-shadow: 0 6px 16px rgba(26,115,232,0.15);
+        }
+
+        /* Card Header */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .word-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .word {
+            font-size: 1.5rem;
+            color: var(--text-main);
+            font-weight: 400;
+        }
+
+        /* Speaker Button Styles */
+        .speaker-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            background-color: transparent;
+            /* Important to prevent card click */
+            z-index: 2; 
+        }
+
+        .speaker-btn:hover {
+            background-color: #e8f0fe;
+        }
+
+        .speaker-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--primary-blue);
+        }
+
+        .speaker-btn:active svg {
+            fill: var(--primary-hover);
+        }
+
+        .pos {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            background: #f1f3f4;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .preview-meaning {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-top: 4px;
+        }
+
+        /* Details Section */
+        .details {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .card.active .details {
+            max-height: 500px;
+            opacity: 1;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #f1f3f4;
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .eng-def {
+            color: var(--text-main);
+            font-weight: 500;
+            margin-bottom: 12px;
+            display: block;
+            line-height: 1.4;
+        }
+
+        .example-box {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 8px;
+            border-left: 3px solid var(--primary-blue);
+        }
+
+        .en-sent {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .en-sent em {
+            color: var(--primary-blue);
+            font-style: normal;
+            font-weight: 700;
+        }
+
+        .cn-sent {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 600px) {
+            .vocab-grid { grid-template-columns: 1fr; }
+            h1 { font-size: 1.8rem; }
+            .container { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Leyla <span>English</span></h1>
+        <div class="search-container">
+            <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
+            <input type="text" id="searchInput" class="search-box" placeholder="Search for a word...">
+        </div>
+    </header>
+
+    <div id="gridContainer" class="vocab-grid">
+        <!-- Javascript renders cards here -->
+    </div>
+</div>
+
+<script>
+    // 數據庫
+    const vocabulary = [
+        { word: "wage", pos: "n.", def: "A fixed regular payment, typically paid on a daily or weekly basis.", meaning: "工資；薪水", en: "The workers are demanding a higher wage.", cn: "工人們正在要求更高的工資。" },
+        { word: "measures", pos: "n.", def: "A plan or course of action taken to achieve a particular purpose.", meaning: "措施；手段", en: "We need to take safety measures immediately.", cn: "我們需要立即採取安全措施。" },
+        { word: "through", pos: "prep.", def: "Moving in one side and out of the other side of an opening.", meaning: "穿過；通過", en: "The train went through the tunnel.", cn: "火車穿過了隧道。" },
+        { word: "authorities", pos: "n.", def: "People or organizations having power or control.", meaning: "當局；官方", en: "The health authorities issued a warning.", cn: "衛生當局發出了警告。" },
+        { word: "virus", pos: "n.", def: "A microscopic infectious agent that causes disease.", meaning: "病毒", en: "The virus spreads quickly in crowded places.", cn: "病毒在擁擠的地方傳播得很快。" },
+        { word: "property", pos: "n.", def: "A thing or things belonging to someone.", meaning: "財產；房產", en: "This fence marks the boundary of my property.", cn: "這道柵欄標示了我的房產邊界。" },
+        { word: "thought", pos: "n. / v.", def: "An idea produced by thinking / Past tense of think.", meaning: "想法；以為", en: "I thought you were coming with us.", cn: "我以為你會跟我們一起來。" },
+        { word: "community", pos: "n.", def: "A group of people living in the same place.", meaning: "社區；社群", en: "She is very active in the local community.", cn: "她在當地社區非常活躍。" },
+        { word: "residents", pos: "n.", def: "People who live somewhere permanently.", meaning: "居民", en: "The residents complained about the noise.", cn: "居民們抱怨噪音問題。" },
+        { word: "marriage", pos: "n.", def: "The legally or formally recognized union of two people.", meaning: "婚姻", en: "They have a very happy marriage.", cn: "他們擁有一段非常幸福的婚姻。" },
+        { word: "split", pos: "v. / n.", def: "To break or cause to break forcibly into parts.", meaning: "分裂；分開", en: "Let's split the bill.", cn: "我們分開結帳吧。" },
+        { word: "industry", pos: "n.", def: "Economic activity concerned with the processing of raw materials.", meaning: "工業；行業", en: "The tourism industry has been hit hard.", cn: "旅遊業受到了重創。" },
+        { word: "legal", pos: "adj.", def: "Permitted by law.", meaning: "合法的；法律的", en: "You should seek legal advice.", cn: "你應該尋求法律建議。" },
+        { word: "storm", pos: "n.", def: "A violent disturbance of the atmosphere with strong winds.", meaning: "暴風雨", en: "A heavy storm is approaching.", cn: "一場猛烈的暴風雨正逼近。" },
+        { word: "west", pos: "n.", def: "The direction where the sun sets.", meaning: "西方", en: "The sun sets in the west.", cn: "太陽從西方落下。" },
+        { word: "matter", pos: "n. / v.", def: "A subject or situation under consideration / To be important.", meaning: "事情；重要", en: "It doesn't matter what you wear.", cn: "你穿什麼並不重要。" },
+        { word: "executive", pos: "n.", def: "A person with senior managerial responsibility.", meaning: "行政主管", en: "She is a senior executive at the company.", cn: "她是那家公司的高級主管。" },
+        { word: "usage", pos: "n.", def: "The action of using something.", meaning: "使用；用法", en: "Water usage increases during summer.", cn: "夏季用水量會增加。" },
+        { word: "poverty", pos: "n.", def: "The state of being extremely poor.", meaning: "貧窮", en: "Many people live in poverty.", cn: "許多人生活在貧困中。" },
+        { word: "infinitive", pos: "n.", def: "The basic form of a verb.", meaning: "不定詞", en: "Underline the infinitive in the sentence.", cn: "在句子中劃出不定詞。" },
+        { word: "authority", pos: "n.", def: "The power or right to give orders.", meaning: "權力；權威", en: "He has the authority to sign.", cn: "他有權簽字。" },
+        { word: "outbreak", pos: "n.", def: "A sudden occurrence of something unwelcome.", meaning: "爆發(疾病等)", en: "The outbreak caused panic.", cn: "疫情爆發引起了恐慌。" },
+        { word: "gap", pos: "n.", def: "A break or hole in an object.", meaning: "差距；缺口", en: "Mind the gap between the train and platform.", cn: "小心火車與月台間的空隙。" },
+        { word: "certain", pos: "adj.", def: "Known for sure; established beyond doubt.", meaning: "肯定的；某個", en: "I am certain he will come.", cn: "我肯定他會來。" },
+        { word: "state", pos: "n. / v.", def: "The particular condition / To express something.", meaning: "狀態；陳述", en: "Please state your name.", cn: "請陳述您的姓名。" },
+        { word: "rate", pos: "n.", def: "A measure, quantity, or frequency.", meaning: "比率；速度", en: "The unemployment rate has fallen.", cn: "失業率下降了。" },
+        { word: "brought", pos: "v.", def: "Past tense of bring.", meaning: "帶來", en: "She brought a gift.", cn: "她帶來了一份禮物。" },
+        { word: "modern", pos: "adj.", def: "Relating to the present or recent times.", meaning: "現代的", en: "We live in a modern society.", cn: "我們生活在現代社會。" },
+        { word: "billion", pos: "n.", def: "The number equivalent to the product of a thousand and a million.", meaning: "十億", en: "The population is over one billion.", cn: "人口超過十億。" },
+        { word: "legislators", pos: "n.", def: "A person who makes laws.", meaning: "立法者", en: "The legislators voted on the bill.", cn: "立法者對法案進行了投票。" },
+        { word: "united", pos: "adj.", def: "Joined together politically or for a common purpose.", meaning: "團結的；聯合的", en: "We must remain united.", cn: "我們必須保持團結。" },
+        { word: "investment", pos: "n.", def: "The action of investing money for profit.", meaning: "投資", en: "Education is a good investment.", cn: "教育是一項很好的投資。" },
+        { word: "parent", pos: "n.", def: "A father or mother.", meaning: "父母親", en: "A single parent faces challenges.", cn: "單親父母面臨挑戰。" },
+        { word: "election", pos: "n.", def: "A formal choice by vote.", meaning: "選舉", en: "The election is next month.", cn: "選舉在下個月。" },
+        { word: "civil", pos: "adj.", def: "Relating to ordinary citizens.", meaning: "公民的；民事的", en: "It is your civil duty.", cn: "這是你的公民義務。" },
+        { word: "flats", pos: "n.", def: "British term for apartments.", meaning: "公寓 (英式)", en: "They live in a block of flats.", cn: "他們住在一棟公寓樓裡。" },
+        { word: "mechanism", pos: "n.", def: "A system of parts working together.", meaning: "機制", en: "The body has a defense mechanism.", cn: "身體有防禦機制。" },
+        { word: "reform", pos: "n.", def: "The action of improving an institution.", meaning: "改革", en: "The system needs reform.", cn: "制度需要改革。" },
+        { word: "spread", pos: "v.", def: "Open out so as to extend its surface area.", meaning: "傳播；擴散", en: "The news spread quickly.", cn: "消息傳播得很快。" },
+        { word: "scheme", pos: "n.", def: "A large-scale systematic plan.", meaning: "計畫；方案", en: "The government launched a new scheme.", cn: "政府推出了一項新計畫。" },
+        { word: "reason", pos: "n.", def: "A cause or explanation.", meaning: "理由", en: "What is the reason for the delay?", cn: "延誤的理由是什麼？" },
+        { word: "natural", pos: "adj.", def: "Existing in or caused by nature.", meaning: "自然的", en: "It looks very natural.", cn: "這看起來很自然。" },
+        { word: "foreign", pos: "adj.", def: "From a country other than one's own.", meaning: "外國的", en: "Do you speak any foreign languages?", cn: "你會說外語嗎？" },
+        { word: "premises", pos: "n.", def: "A building and its land.", meaning: "場所；處所", en: "No smoking on the premises.", cn: "場所內禁止吸煙。" },
+        { word: "protection", pos: "n.", def: "The state of being protected.", meaning: "保護", en: "Wear gear for protection.", cn: "穿戴裝備以獲取保護。" },
+        { word: "companies", pos: "n.", def: "Commercial businesses.", meaning: "公司", en: "Many companies offer remote work.", cn: "許多公司提供遠程工作。" },
+        { word: "America", pos: "n.", def: "The United States.", meaning: "美國", en: "He plans to visit America.", cn: "他計畫去美國。" },
+        { word: "anti", pos: "prefix", def: "Opposed to; against.", meaning: "反對；抗", en: "This is an anti-virus software.", cn: "這是防毒軟體。" },
+        { word: "further", pos: "adj.", def: "More distant in space or time.", meaning: "進一步的", en: "Contact us for further information.", cn: "聯繫我們以獲取進一步資訊。" },
+        { word: "century", pos: "n.", def: "A period of 100 years.", meaning: "世紀", en: "We are in the 21st century.", cn: "我們處於21世紀。" },
+        { word: "force", pos: "n. / v.", def: "Strength or energy / To make someone do something.", meaning: "力量；強迫", en: "Don't force it.", cn: "別強迫。" },
+        { word: "committee", pos: "n.", def: "A group of people appointed for a function.", meaning: "委員會", en: "The committee will meet tomorrow.", cn: "委員會明天開會。" },
+        { word: "town", pos: "n.", def: "An urban area smaller than a city.", meaning: "城鎮", en: "I grew up in a small town.", cn: "我在一個小鎮長大。" },
+        { word: "estate", pos: "n.", def: "An extensive area of land.", meaning: "地產；莊園", en: "He is a real estate agent.", cn: "他是一名房地產經紀人。" },
+        { word: "indeed", pos: "adv.", def: "Used to emphasize a statement.", meaning: "的確；確實", en: "It is indeed a good idea.", cn: "這確實是個好主意。" },
+        { word: "arrangements", pos: "n.", def: "Plans or preparations.", meaning: "安排", en: "I made arrangements for the trip.", cn: "我為旅行做好了安排。" },
+        { word: "adapted", pos: "v.", def: "Make suitable for a new use.", meaning: "適應；改編", en: "She adapted to the new school.", cn: "她適應了新學校。" },
+        { word: "serious", pos: "adj.", def: "Demanding careful consideration.", meaning: "嚴肅的；嚴重的", en: "This is a serious problem.", cn: "這是個嚴重的問題。" },
+        { word: "properties", pos: "n.", def: "Attributes or characteristics.", meaning: "特性；資產", en: "Herbs have healing properties.", cn: "草藥具有治療特性。" },
+        { word: "related", pos: "adj.", def: "Belonging to the same family or group.", meaning: "相關的", en: "The two events are related.", cn: "這兩件事是相關的。" },
+        { word: "constitutional", pos: "adj.", def: "Relating to an established set of principles.", meaning: "憲法的", en: "It is a constitutional right.", cn: "這是一項憲法權利。" },
+        { word: "council", pos: "n.", def: "An advisory or legislative body.", meaning: "議會", en: "The city council met yesterday.", cn: "市議會昨天開會了。" },
+        { word: "democracy", pos: "n.", def: "A system of government by the whole population.", meaning: "民主", en: "They fight for democracy.", cn: "他們為民主而戰。" },
+        { word: "attempt", pos: "n. / v.", def: "Make an effort to achieve.", meaning: "嘗試", en: "He made an attempt to escape.", cn: "他試圖逃跑。" },
+        { word: "status", pos: "n.", def: "The relative social or professional standing.", meaning: "地位；狀態", en: "Check the status of your order.", cn: "檢查你的訂單狀態。" },
+        { word: "drone", pos: "n.", def: "A remote-controlled pilotless aircraft.", meaning: "無人機", en: "He flew a drone.", cn: "他駕駛了無人機。" },
+        { word: "fund", pos: "n. / v.", def: "A sum of money saved or made available.", meaning: "資金；資助", en: "We need more funds.", cn: "我們需要更多資金。" },
+        { word: "proposed", pos: "adj.", def: "Put forward for consideration.", meaning: "被提議的", en: "The proposed plan was rejected.", cn: "提議的計畫被拒絕了。" },
+        { word: "wave", pos: "n.", def: "A long body of water curling into an arched form.", meaning: "波浪；揮手", en: "A big wave hit the boat.", cn: "一個大浪打中了船。" },
+        { word: "previous", pos: "adj.", def: "Existing or occurring before.", meaning: "先前的", en: "In the previous chapter...", cn: "在上一章..." },
+        { word: "conducted", pos: "v.", def: "Organize and carry out.", meaning: "執行；實施", en: "The survey was conducted online.", cn: "調查是在線上進行的。" },
+        { word: "purpose", pos: "n.", def: "The reason for which something is done.", meaning: "目的", en: "What is the purpose of this?", cn: "這的目的是什麼？" },
+        { word: "secretary", pos: "n.", def: "A person employed to assist with correspondence.", meaning: "秘書", en: "Call my secretary.", cn: "打給我的秘書。" },
+        { word: "outbreaks", pos: "n.", def: "Sudden occurrences of something unwelcome.", meaning: "爆發(複數)", en: "There were several outbreaks.", cn: "發生了幾次爆發。" },
+        { word: "speculation", pos: "n.", def: "The forming of a theory without firm evidence.", meaning: "猜測；投機", en: "It is just pure speculation.", cn: "這純粹是猜測。" },
+        { word: "appropriate", pos: "adj.", def: "Suitable or proper in the circumstances.", meaning: "適當的", en: "Is this dress appropriate?", cn: "這件衣服合適嗎？" },
+        { word: "prevention", pos: "n.", def: "The action of stopping something from happening.", meaning: "預防", en: "Prevention is better than cure.", cn: "預防勝於治療。" },
+        { word: "households", pos: "n.", def: "A house and its occupants.", meaning: "家庭；戶", en: "Many households have pets.", cn: "許多家庭有寵物。" },
+        { word: "engaged", pos: "adj.", def: "Having formally agreed to marry.", meaning: "訂婚的；從事的", en: "They got engaged.", cn: "他們訂婚了。" },
+        { word: "scattered", pos: "adj.", def: "Found at various locations.", meaning: "分散的", en: "Scattered showers are expected.", cn: "預計會有零星陣雨。" },
+        { word: "bill", pos: "n.", def: "A statement of money owed.", meaning: "帳單；法案", en: "Pay the bill.", cn: "付帳單。" },
+        { word: "operation", pos: "n.", def: "The fact or condition of functioning.", meaning: "手術；行動", en: "The operation was a success.", cn: "手術很成功。" },
+        { word: "spider", pos: "n.", def: "An eight-legged predatory arachnid.", meaning: "蜘蛛", en: "There is a spider on the wall.", cn: "牆上有一隻蜘蛛。" },
+        { word: "tenants", pos: "n.", def: "A person who occupies property rented from a landlord.", meaning: "租戶", en: "The tenants pay rent monthly.", cn: "租戶每月付房租。" },
+        { word: "declaration", pos: "n.", def: "A formal or explicit statement.", meaning: "宣言", en: "A declaration of independence.", cn: "獨立宣言。" },
+        { word: "email", pos: "n.", def: "Messages distributed by electronic means.", meaning: "電子郵件", en: "Send me an email.", cn: "寄封郵件給我。" },
+        { word: "matters", pos: "n.", def: "A subject or situation.", meaning: "事態；事務", en: "He handles financial matters.", cn: "他處理財務事務。" },
+        { word: "entire", pos: "adj.", def: "With no part left out.", meaning: "整個的", en: "I ate the entire cake.", cn: "我吃了整個蛋糕。" },
+        { word: "personnel", pos: "n.", def: "People employed in an organization.", meaning: "人員", en: "Only authorized personnel.", cn: "僅限授權人員。" },
+        { word: "infections", pos: "n.", def: "The process of infecting.", meaning: "感染", en: "Treat skin infections.", cn: "治療皮膚感染。" },
+        { word: "schemes", pos: "n.", def: "Systematic plans.", meaning: "計畫(複數)", en: "He has many schemes.", cn: "他有很多計畫。" },
+        { word: "definitely", pos: "adv.", def: "Without doubt.", meaning: "肯定地", en: "I will definitely go.", cn: "我肯定會去。" },
+        { word: "loving", pos: "adj.", def: "Feeling or showing love.", meaning: "充滿愛的", en: "A loving family.", cn: "一個充滿愛的家庭。" },
+        { word: "deal", pos: "n. / v.", def: "An agreement entered into by two or more parties.", meaning: "交易；處理", en: "It's a deal.", cn: "成交。" },
+        { word: "experts", pos: "n.", def: "A person who has comprehensive knowledge.", meaning: "專家", en: "Ask the experts.", cn: "問問專家。" },
+        { word: "scale", pos: "n.", def: "The relative extent of something.", meaning: "規模；磅秤", en: "On a large scale.", cn: "大規模地。" },
+        { word: "ruling", pos: "n.", def: "An authoritative decision.", meaning: "裁決", en: "The court's ruling.", cn: "法院的裁決。" },
+        { word: "questionnaire", pos: "n.", def: "A set of printed questions.", meaning: "問卷", en: "Fill out the questionnaire.", cn: "填寫問卷。" },
+        { word: "quarantine", pos: "n.", def: "A state of isolation for disease control.", meaning: "隔離", en: "Go into quarantine.", cn: "進入隔離。" },
+        { word: "societies", pos: "n.", def: "Aggregate of people living together.", meaning: "社會(複數)", en: "Different societies.", cn: "不同的社會。" },
+        { word: "endemic", pos: "adj.", def: "Regularly found among particular people.", meaning: "地方性的", en: "The disease is endemic here.", cn: "這種病在這裡是地方病。" },
+        { word: "transmission", pos: "n.", def: "The action of transmitting.", meaning: "傳播", en: "Prevent virus transmission.", cn: "預防病毒傳播。" },
+        { word: "drastic", pos: "adj.", def: "Likely to have a strong effect.", meaning: "激烈的", en: "Drastic measures.", cn: "激烈的手段。" },
+        { word: "infinitives", pos: "n.", def: "The basic form of verbs.", meaning: "不定詞(複數)", en: "Learn about infinitives.", cn: "學習不定詞。" },
+        { word: "joint", pos: "adj. / n.", def: "Shared by two or more people.", meaning: "聯合的；關節", en: "A joint effort.", cn: "共同的努力。" }
+    ];
+
+    const gridContainer = document.getElementById('gridContainer');
+    const searchInput = document.getElementById('searchInput');
+
+    // 語音合成函數
+    function speakWord(text) {
+        // 取消之前的發音（避免快速點擊時隊列過長）
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US'; // 設定為美式發音
+        utterance.rate = 0.9;     // 稍微放慢一點點語速，更清晰
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function renderCards(items) {
+        gridContainer.innerHTML = '';
+        items.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            
+            // 例句高亮
+            const highlightedEn = item.en.replace(new RegExp(`(${item.word})`, 'gi'), '<em>$1</em>');
+
+            // Speaker Icon SVG
+            const speakerSvg = `<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`;
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <div class="word-group">
+                        <span class="word">${item.word}</span>
+                        <div class="speaker-btn" title="Listen">
+                            ${speakerSvg}
+                        </div>
+                    </div>
+                    <span class="pos">${item.pos}</span>
+                </div>
+                <div class="preview-meaning">${item.meaning}</div>
+                <div class="details">
+                    <div class="def-section">
+                        <div class="section-title">Definition</div>
+                        <span class="eng-def">${item.def}</span>
+                    </div>
+                    <div class="example-box">
+                        <div class="section-title" style="margin-bottom:8px;">Example</div>
+                        <span class="en-sent">${highlightedEn}</span>
+                        <span class="cn-sent">${item.cn}</span>
+                    </div>
+                </div>
+            `;
+
+            // 為喇叭按鈕添加點擊事件
+            const speakerBtn = card.querySelector('.speaker-btn');
+            speakerBtn.addEventListener('click', function(e) {
+                e.stopPropagation(); // 阻止事件冒泡 (防止觸發卡片展開)
+                speakWord(item.word);
+            });
+
+            // 卡片點擊展開/收起
+            card.addEventListener('click', function() {
+                this.classList.toggle('active');
+            });
+
+            gridContainer.appendChild(card);
+        });
+    }
+
+    // 搜尋過濾
+    searchInput.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        const filtered = vocabulary.filter(item => 
+            item.word.toLowerCase().includes(term) || 
+            item.meaning.includes(term)
+        );
+        renderCards(filtered);
+    });
+
+    // 初始化
+    renderCards(vocabulary);
+
+</script>
+
+</body>
+</html>
